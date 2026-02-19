@@ -45,14 +45,12 @@ app.get("/resolve", async (req, res) => {
     "-f",
     "bestaudio[ext=m4a]/bestaudio",
     "-g",
-    "--no-check-certificates",
+    "--cookies",
+    "./cookies.txt",
     "--force-ipv4",
+    "--no-check-certificates",
     "--geo-bypass",
-    "--extractor-args",
-    "youtube:player_client=android,player_skip=configs",
-    "--add-header",
-    "User-Agent:com.google.android.youtube/19.09.37 (Linux; U; Android 13)",
-    url
+    `https://youtube.com/watch?v=${videoId}`
   ]);
 
   let audioUrl = "";
