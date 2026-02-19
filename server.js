@@ -70,15 +70,13 @@ app.get("/audio", (req, res) => {
     "-i", "pipe:0",
     "-vn",
     "-acodec", "aac",
-    "-b:a", "192k",
-    "-f", "mp4",
-    "-movflags", "+faststart",
+    "-f", "adts",
     "pipe:1",
   ]);
 
   ytdlp.stdout.pipe(ffmpeg.stdin);
 
-  res.setHeader("Content-Type", "audio/mp4");
+  res.setHeader("Content-Type", "audio/aac");
   res.setHeader("Transfer-Encoding", "chunked");
   res.setHeader("Cache-Control", "no-store");
 
