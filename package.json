@@ -1,0 +1,15 @@
+{
+  "name": "arythm-audio-proxy",
+  "version": "1.0.0",
+  "description": "yt-dlp audio streaming proxy for Arythm",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
