@@ -7,9 +7,12 @@ RUN apt-get update && apt-get install -y \
     curl \
     nodejs \
     npm \
+    git \
     && rm -rf /var/lib/apt/lists/*
 
 RUN pip3 install -U yt-dlp
+
+RUN npm install -g youtube-dl-ejs
 
 WORKDIR /app
 

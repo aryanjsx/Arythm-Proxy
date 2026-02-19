@@ -48,10 +48,12 @@ app.get("/resolve", async (req, res) => {
     "--cookies",
     "./cookies.txt",
     "--force-ipv4",
-    "--no-check-certificates",
+    "--js-runtimes",
+    "node",
     "--geo-bypass",
     `https://youtube.com/watch?v=${videoId}`
   ]);
+  
 
   let audioUrl = "";
   let err = "";
