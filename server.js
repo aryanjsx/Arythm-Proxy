@@ -1,11 +1,43 @@
 const express = require("express");
 const { spawn } = require("child_process");
+const fs = require("fs");
+const path = require("path");
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+const COOKIES_PATH = path.join(__dirname, "cookies.txt");
+
+function writeCookiesFile() {
+  const raw = process.env.YOUTUBE_COOKIE;
+  if (!raw) {
+    console.warn("[init] YOUTUBE_COOKIE not set — yt-dlp may fail on age-restricted or bot-blocked content");
+    return false;
+  }
+
+  const lines = ["# Netscape HTTP Cookie File", "# Generated from YOUTUBE_COOKIE env var", ""];
+
+  const pairs = raw.split(";").map((s) => s.trim()).filter(Boolean);
+  for (const pair of pairs) {
+    const eqIdx = pair.indexOf("=");
+    if (eqIdx === -1) continue;
+
+    const name = pair.slice(0, eqIdx).trim();
+    const value = pair.slice(eqIdx + 1).trim();
+    const secure = name.startsWith("__Secure") ? "TRUE" : "FALSE";
+    const expiry = Math.floor(Date.now() / 1000) + 86400 * 365;
+
+    lines.push(`.youtube.com\tTRUE\t/\t${secure}\t${expiry}\t${name}\t${value}`);
+  }
+
+  fs.writeFileSync(COOKIES_PATH, lines.join("\n") + "\n");
+  console.log(`[init] Wrote ${pairs.length} cookies to ${COOKIES_PATH}`);
+  return true;
+}
+
+const hasCookies = writeCookiesFile();
 
 app.get("/health", (_req, res) => {
-  res.json({ status: "ok" });
+  res.json({ status: "ok", cookies: hasCookies });
 });
 
 app.get("/audio", (req, res) => {
@@ -18,13 +50,20 @@ app.get("/audio", (req, res) => {
   const sanitized = videoId.replace(/[^a-zA-Z0-9_-]/g, "");
   const url = `https://music.youtube.com/watch?v=${sanitized}`;
 
-  const ytdlp = spawn("yt-dlp", [
+  const args = [
     "-f", "bestaudio[ext=m4a]/bestaudio",
     "--no-playlist",
     "--no-warnings",
     "-o", "-",
-    url,
-  ]);
+  ];
+
+  if (hasCookies) {
+    args.unshift("--cookies", COOKIES_PATH);
+  }
+
+  args.push(url);
+
+  const ytdlp = spawn("yt-dlp", args);
 
   res.setHeader("Content-Type", "audio/mp4");
   res.setHeader("Transfer-Encoding", "chunked");
