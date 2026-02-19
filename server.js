@@ -39,13 +39,13 @@ app.get("/resolve", async (req, res) => {
   const videoId = req.query.v;
   if (!videoId) return res.sendStatus(400);
 
-  const url = `https://youtube.com/watch?v=${videoId}`;
-
   const ytdlp = spawn("yt-dlp", [
     "-f",
     "bestaudio[ext=m4a]/bestaudio",
     "-g",
-    url
+    "--extractor-args",
+    "youtube:player_client=android",
+    `https://youtube.com/watch?v=${videoId}`
   ]);
 
   let audioUrl = "";
