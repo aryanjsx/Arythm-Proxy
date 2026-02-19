@@ -1,7 +1,12 @@
-const express = require("express");
-const { spawn } = require("child_process");
+import express from "express";
+import cors from "cors";
+import { spawn } from "child_process";
 
 const app = express();
+
+app.use(cors({
+  origin: "*"
+}));
 
 app.get("/audio", (req, res) => {
 
@@ -24,8 +29,35 @@ app.get("/audio", (req, res) => {
   });
 
   ytdlp.on("close", () => {
-    audioUrl = audioUrl.trim();
-    res.redirect(audioUrl);
+    res.json({ url: audioUrl.trim() });
+  });
+
+});
+
+app.get("/resolve", async (req, res) => {
+
+  const videoId = req.query.v;
+  if (!videoId) return res.sendStatus(400);
+
+  const url = `https://youtube.com/watch?v=${videoId}`;
+
+  const ytdlp = spawn("yt-dlp", [
+    "-f",
+    "bestaudio[ext=m4a]/bestaudio",
+    "-g",
+    url
+  ]);
+
+  let audioUrl = "";
+
+  ytdlp.stdout.on("data", (d) => {
+    audioUrl += d.toString();
+  });
+
+  ytdlp.on("close", () => {
+    res.json({
+      url: audioUrl.trim()
+    });
   });
 
 });
