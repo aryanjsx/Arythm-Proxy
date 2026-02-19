@@ -1,20 +1,22 @@
-FROM node:20-slim
+FROM ubuntu:22.04
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-get update && apt-get install -y \
     python3 \
     python3-pip \
     ffmpeg \
-    && pip3 install --break-system-packages yt-dlp \
-    && apt-get clean \
+    curl \
+    nodejs \
+    npm \
     && rm -rf /var/lib/apt/lists/*
+
+RUN pip3 install -U yt-dlp
 
 WORKDIR /app
 
-COPY package.json ./
-RUN npm install --omit=dev
+COPY . .
 
-COPY server.js ./
+RUN npm install
 
-EXPOSE 3001
+EXPOSE 10000
 
 CMD ["node", "server.js"]
