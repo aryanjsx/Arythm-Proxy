@@ -43,6 +43,9 @@ app.get("/resolve", async (req, res) => {
     "-f",
     "bestaudio[ext=m4a]/bestaudio",
     "-g",
+    "--no-check-certificates",
+    "--user-agent",
+    "com.google.android.youtube/19.09.37 (Linux; U; Android 13)",
     "--extractor-args",
     "youtube:player_client=android",
     `https://youtube.com/watch?v=${videoId}`
