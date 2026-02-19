@@ -51,9 +51,8 @@ app.get("/audio", (req, res) => {
   const url = `https://music.youtube.com/watch?v=${sanitized}`;
 
   const args = [
-    "-f", "bestaudio[ext=m4a]/bestaudio",
+    "-f", "bestaudio[ext=m4a]",
     "--no-playlist",
-    "--no-warnings",
     "-o", "-",
   ];
 
@@ -66,6 +65,7 @@ app.get("/audio", (req, res) => {
   const ytdlp = spawn("yt-dlp", args);
 
   res.setHeader("Content-Type", "audio/mp4");
+  res.setHeader("Accept-Ranges", "bytes");
   res.setHeader("Transfer-Encoding", "chunked");
   res.setHeader("Cache-Control", "no-store");
 
