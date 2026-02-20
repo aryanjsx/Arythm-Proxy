@@ -42,16 +42,13 @@ app.get("/resolve", async (req, res) => {
   const url = `https://youtube.com/watch?v=${videoId}`;
 
   const ytdlp = spawn("yt-dlp", [
-    "-f",
-    "bestaudio[ext=m4a]/bestaudio",
+    "-f", "bestaudio[ext=m4a]/bestaudio",
     "-g",
-    "--cookies",
-    "./cookies.txt",
+    "--cookies", "./cookies.txt",
     "--force-ipv4",
-    "--js-runtimes",
-    "node",
+    "--js-runtimes", "node",
     "--geo-bypass",
-    `https://youtube.com/watch?v=${videoId}`
+    url
   ]);
   
 

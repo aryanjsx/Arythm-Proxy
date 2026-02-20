@@ -5,14 +5,16 @@ RUN apt-get update && apt-get install -y \
     python3-pip \
     ffmpeg \
     curl \
-    nodejs \
-    npm \
     git \
+    ca-certificates \
+    gnupg \
     && rm -rf /var/lib/apt/lists/*
 
-RUN pip3 install -U yt-dlp
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y nodejs \
+    && rm -rf /var/lib/apt/lists/*
 
-RUN npm install -g youtube-dl-ejs
+RUN pip3 install -U yt-dlp yt-dlp-ejs
 
 WORKDIR /app
 
