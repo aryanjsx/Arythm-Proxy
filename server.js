@@ -60,41 +60,56 @@ function resolveAudioUrl(videoId) {
   return promise;
 }
 
-app.get("/stream", async (req, res) => {
-  const videoId = req.query.v;
-  if (!videoId) return res.sendStatus(400);
+function pipeUpstream(audioUrl, req, res) {
+  const headers = {};
+  if (req.headers.range) headers.Range = req.headers.range;
 
-  try {
-    const audioUrl = await resolveAudioUrl(videoId);
-
-    const headers = {};
-    if (req.headers.range) {
-      headers.Range = req.headers.range;
-    }
-
-    const upstream = await fetch(audioUrl, { headers });
-
+  return fetch(audioUrl, { headers }).then((upstream) => {
     if (!upstream.ok && upstream.status !== 206) {
-      urlCache.delete(videoId);
-      return res.status(upstream.status).json({ error: "Upstream fetch failed" });
+      res.status(upstream.status).json({ error: "Upstream fetch failed" });
+      return false;
     }
 
     res.status(upstream.status);
-
     for (const h of ["content-type", "content-length", "content-range", "accept-ranges"]) {
       const val = upstream.headers.get(h);
       if (val) res.setHeader(h, val);
     }
-
     Readable.fromWeb(upstream.body).pipe(res);
-  } catch (err) {
-    urlCache.delete(videoId);
-    res.status(500).json({ error: err.message || "Stream failed" });
-  }
-
-  req.on("close", () => {
-    // client disconnected — response stream auto-closes
+    return true;
   });
+}
+
+app.get("/stream", async (req, res) => {
+  const videoId = req.query.v;
+  const directUrl = req.query.url;
+
+  if (!videoId && !directUrl) return res.sendStatus(400);
+
+  try {
+    if (directUrl) {
+      const host = new URL(directUrl).hostname;
+      if (!host.endsWith(".googlevideo.com") && !host.endsWith(".youtube.com")) {
+        return res.status(403).json({ error: "Forbidden host" });
+      }
+      const ok = await pipeUpstream(directUrl, req, res);
+      if (!ok && videoId) {
+        const fallbackUrl = await resolveAudioUrl(videoId);
+        await pipeUpstream(fallbackUrl, req, res);
+      }
+      return;
+    }
+
+    const audioUrl = await resolveAudioUrl(videoId);
+    const ok = await pipeUpstream(audioUrl, req, res);
+    if (!ok) {
+      urlCache.delete(videoId);
+      if (!res.headersSent) res.status(500).json({ error: "Stream failed" });
+    }
+  } catch (err) {
+    if (videoId) urlCache.delete(videoId);
+    if (!res.headersSent) res.status(500).json({ error: err.message || "Stream failed" });
+  }
 });
 
 app.get("/resolve", async (req, res) => {
