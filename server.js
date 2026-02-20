@@ -10,7 +10,8 @@ app.use(cors({
 }));
 
 const urlCache = new Map();
-const URL_TTL = 5 * 60 * 60 * 1000; // 5 hours (googlevideo URLs expire in ~6h)
+const inflight = new Map();
+const URL_TTL = 5 * 60 * 60 * 1000;
 
 function resolveAudioUrl(videoId) {
   const cached = urlCache.get(videoId);
@@ -18,10 +19,17 @@ function resolveAudioUrl(videoId) {
     return Promise.resolve(cached.url);
   }
 
-  return new Promise((resolve, reject) => {
+  if (inflight.has(videoId)) {
+    return inflight.get(videoId);
+  }
+
+  const promise = new Promise((resolve, reject) => {
     const ytdlp = spawn("yt-dlp", [
       "-f", "bestaudio[ext=m4a]/bestaudio",
       "-g",
+      "--no-playlist",
+      "--no-warnings",
+      "--extractor-retries", "0",
       "--cookies", "./cookies.txt",
       "--force-ipv4",
       "--js-runtimes", "node",
@@ -45,6 +53,11 @@ function resolveAudioUrl(videoId) {
       resolve(audioUrl);
     });
   });
+
+  inflight.set(videoId, promise);
+  promise.finally(() => inflight.delete(videoId));
+
+  return promise;
 }
 
 app.get("/stream", async (req, res) => {
